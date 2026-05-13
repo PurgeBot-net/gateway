@@ -9,6 +9,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/sharding"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"go.uber.org/zap"
 
@@ -38,9 +39,11 @@ func (g *Gateway) Start(ctx context.Context) error {
 	defer kafka.Close()
 
 	client, err := disgo.New(g.cfg.Token,
-		bot.WithGatewayConfigOpts(
-			gateway.WithIntents(
-				gateway.IntentGuilds,
+		bot.WithShardManagerConfigOpts(
+			sharding.WithAutoScaling(true),
+			sharding.WithShardSplitCount(g.cfg.ShardSplitCount),
+			sharding.WithGatewayConfigOpts(
+				gateway.WithIntents(gateway.IntentGuilds),
 			),
 		),
 		bot.WithEventListenerFunc(g.onReady),
@@ -53,7 +56,7 @@ func (g *Gateway) Start(ctx context.Context) error {
 	g.client = client
 	defer client.Close(ctx)
 
-	if err := client.OpenGateway(ctx); err != nil {
+	if err := client.OpenShardManager(ctx); err != nil {
 		return err
 	}
 
@@ -63,9 +66,11 @@ func (g *Gateway) Start(ctx context.Context) error {
 }
 
 func (g *Gateway) onReady(e *events.Ready) {
-	g.logger.Info("bot ready",
+	g.logger.Info("shard ready",
 		zap.String("username", e.User.Username),
 		zap.Int("guilds", len(e.Guilds)),
+		zap.Int("shard_id", e.Shard[0]),
+		zap.Int("shard_count", e.Shard[1]),
 	)
 }
 

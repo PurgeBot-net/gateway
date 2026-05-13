@@ -28,6 +28,9 @@ type Config struct {
 	KafkaBrokers     string `env:"KAFKA_BROKERS"       envDefault:"localhost:9092"`
 	KafkaEventsTopic string `env:"KAFKA_EVENTS_TOPIC"  envDefault:"purgebot-events"`
 
+	// Sharding
+	ShardSplitCount int `env:"SHARD_SPLIT_COUNT" envDefault:"2"`
+
 	// Observability
 	SentryDSN string `env:"SENTRY_DSN"`
 	LogLevel  string `env:"LOG_LEVEL"  envDefault:"info"`
