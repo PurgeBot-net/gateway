@@ -10,7 +10,7 @@ import (
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/sharding"
-	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
 	"github.com/PurgeBot-net/database"
@@ -23,21 +23,14 @@ type Gateway struct {
 	logger *zap.Logger
 	db     *database.Database
 	client *bot.Client
-	kafka  *kgo.Client
+	redis  *redis.Client
 }
 
-func NewGateway(cfg gconfig.Config, logger *zap.Logger, db *database.Database) *Gateway {
-	return &Gateway{cfg: cfg, logger: logger, db: db}
+func NewGateway(cfg gconfig.Config, logger *zap.Logger, db *database.Database, redis *redis.Client) *Gateway {
+	return &Gateway{cfg: cfg, logger: logger, db: db, redis: redis}
 }
 
 func (g *Gateway) Start(ctx context.Context) error {
-	kafka, err := kgo.NewClient(kgo.SeedBrokers(g.cfg.KafkaBrokerList()...))
-	if err != nil {
-		return err
-	}
-	g.kafka = kafka
-	defer kafka.Close()
-
 	client, err := disgo.New(g.cfg.Token,
 		bot.WithShardManagerConfigOpts(
 			sharding.WithAutoScaling(true),
@@ -121,15 +114,14 @@ func (g *Gateway) onGuildLeave(e *events.GuildLeave) {
 func (g *Gateway) publishEvent(payload any) {
 	data, err := json.Marshal(payload)
 	if err != nil {
-		g.logger.Error("marshal kafka event", zap.Error(err))
+		g.logger.Error("marshal event", zap.Error(err))
 		return
 	}
-	g.kafka.TryProduce(context.Background(), &kgo.Record{
-		Topic: g.cfg.KafkaEventsTopic,
-		Value: data,
-	}, func(_ *kgo.Record, err error) {
-		if err != nil {
-			g.logger.Warn("publish kafka event", zap.Error(err))
-		}
-	})
+	err = g.redis.XAdd(context.Background(), &redis.XAddArgs{
+		Stream: g.cfg.RedisEventsStream,
+		Values: map[string]any{"data": data},
+	}).Err()
+	if err != nil {
+		g.logger.Warn("publish event", zap.Error(err))
+	}
 }

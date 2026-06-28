@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/caarlos0/env/v11"
 )
@@ -20,13 +19,10 @@ type Config struct {
 	DatabasePassword string `env:"DATABASE_PASSWORD"`
 
 	// Redis
-	RedisAddr     string `env:"REDIS_ADDR"     envDefault:"localhost:6379"`
-	RedisPassword string `env:"REDIS_PASSWORD"`
-	RedisDB       int    `env:"REDIS_DB"       envDefault:"0"`
-
-	// Kafka
-	KafkaBrokers     string `env:"KAFKA_BROKERS"       envDefault:"localhost:9092"`
-	KafkaEventsTopic string `env:"KAFKA_EVENTS_TOPIC"  envDefault:"purgebot-events"`
+	RedisAddr         string `env:"REDIS_ADDR"          envDefault:"localhost:6379"`
+	RedisPassword     string `env:"REDIS_PASSWORD"`
+	RedisDB           int    `env:"REDIS_DB"            envDefault:"0"`
+	RedisEventsStream string `env:"REDIS_EVENTS_STREAM" envDefault:"purgebot-events"`
 
 	// Sharding
 	ShardSplitCount int `env:"SHARD_SPLIT_COUNT" envDefault:"2"`
@@ -44,8 +40,4 @@ func Load() (Config, error) {
 func (c *Config) DatabaseURL() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s",
 		c.DatabaseUser, c.DatabasePassword, c.DatabaseHost, c.DatabasePort, c.DatabaseName)
-}
-
-func (c *Config) KafkaBrokerList() []string {
-	return strings.Split(c.KafkaBrokers, ",")
 }

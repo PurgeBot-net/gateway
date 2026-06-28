@@ -20,8 +20,7 @@ All configuration is loaded from environment variables (see `.env.example` in th
 | `REDIS_ADDR`             | Redis address                     |
 | `REDIS_PASSWORD`         | Redis password                    |
 | `REDIS_DB`               | Redis database index              |
-| `KAFKA_BROKERS`          | Kafka broker list                 |
-| `KAFKA_EVENTS_TOPIC`     | Topic for guild lifecycle events  |
+| `REDIS_EVENTS_STREAM`    | Stream for guild lifecycle events |
 | `SENTRY_DSN`             | Sentry error reporting (optional) |
 | `LOG_LEVEL`              | `debug`, `info`, `warn`, `error`  |
 | `LOG_JSON`               | `true` for JSON log output        |

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/PurgeBot-net/common/log"
+	"github.com/PurgeBot-net/common/rdb"
 	"github.com/PurgeBot-net/database"
 	"github.com/PurgeBot-net/gateway/config"
 	"github.com/PurgeBot-net/gateway/internal/events"
@@ -37,7 +38,13 @@ func main() {
 	}
 	defer db.Close()
 
-	gw := events.NewGateway(cfg, logger, db)
+	redis, err := rdb.New(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
+	if err != nil {
+		logger.Fatal("connect redis", zap.Error(err))
+	}
+	defer redis.Close()
+
+	gw := events.NewGateway(cfg, logger, db, redis)
 	if err := gw.Start(ctx); err != nil {
 		logger.Fatal("gateway stopped", zap.Error(err))
 	}
