@@ -36,12 +36,13 @@ func (g *Gateway) Start(ctx context.Context) error {
 			sharding.WithAutoScaling(true),
 			sharding.WithShardSplitCount(g.cfg.ShardSplitCount),
 			sharding.WithGatewayConfigOpts(
-				gateway.WithIntents(gateway.IntentGuilds),
+				gateway.WithIntents(gateway.IntentGuilds|gateway.IntentGuildMessages),
 			),
 		),
 		bot.WithEventListenerFunc(g.onReady),
 		bot.WithEventListenerFunc(g.onGuildJoin),
 		bot.WithEventListenerFunc(g.onGuildLeave),
+		bot.WithEventListenerFunc(g.onGuildMessageCreate),
 	)
 	if err != nil {
 		return err

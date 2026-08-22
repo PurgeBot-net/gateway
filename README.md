@@ -4,9 +4,18 @@ Discord gateway service for PurgeBot. Maintains a persistent WebSocket connectio
 
 ## Responsibilities
 
-- Connects to the Discord gateway with the `Guilds` intent
+- Connects to the Discord gateway with the `Guilds` and `Guild Messages` intents
 - Logs bot ready state and guild count on startup
 - Handles `GuildJoin` and `GuildLeave` events
+- Handles `@PurgeBot stop`, a fallback for cancelling a purge when the cancel button is unreachable
+
+## Mention fallback
+
+`@PurgeBot stop` ends the guild's purge job, running or pending. Guild-only. Like the cancel button, only the user who started the job may stop it, and the bot replies only when a cancel fires.
+
+List of keywords: stop, cancel, abort, halt, end, stop purge, cancel purge, stop purging, stop it, please stop
+
+The privileged **Message Content** intent is not required, since Discord populates content for messages that mention the app and the trigger requires a leading mention.
 
 ## Configuration
 
