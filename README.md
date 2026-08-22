@@ -6,7 +6,8 @@ Discord gateway service for PurgeBot. Maintains a persistent WebSocket connectio
 
 - Connects to the Discord gateway with the `Guilds` and `Guild Messages` intents
 - Logs bot ready state and guild count on startup
-- Handles `GuildJoin` and `GuildLeave` events
+- Handles `GuildJoin` and `GuildLeave` events, publishing each as `guild_create` / `guild_delete` onto `REDIS_EVENTS_STREAM`
+- Sends a localised welcome DM to the guild owner on `GuildJoin`
 - Handles `@PurgeBot stop`, a fallback for cancelling a purge when the cancel button is unreachable
 
 ## Mention fallback
@@ -21,15 +22,16 @@ The privileged **Message Content** intent is not required, since Discord populat
 
 All configuration is loaded from environment variables (see `.env.example` in the docker repo).
 
-| Variable                 | Description                       |
-| ------------------------ | --------------------------------- |
-| `DISCORD_TOKEN`          | Bot token                         |
-| `DISCORD_APPLICATION_ID` | Application ID                    |
-| `DATABASE_*`             | PostgreSQL connection             |
-| `REDIS_ADDR`             | Redis address                     |
-| `REDIS_PASSWORD`         | Redis password                    |
-| `REDIS_DB`               | Redis database index              |
-| `REDIS_EVENTS_STREAM`    | Stream for guild lifecycle events |
-| `SENTRY_DSN`             | Sentry error reporting (optional) |
-| `LOG_LEVEL`              | `debug`, `info`, `warn`, `error`  |
-| `LOG_JSON`               | `true` for JSON log output        |
+| Variable                 | Description                                                          |
+| ------------------------ | -------------------------------------------------------------------- |
+| `DISCORD_TOKEN`          | Bot token                                                            |
+| `DISCORD_APPLICATION_ID` | Application ID                                                       |
+| `DATABASE_*`             | PostgreSQL connection                                                |
+| `REDIS_ADDR`             | Redis address                                                        |
+| `REDIS_PASSWORD`         | Redis password                                                       |
+| `REDIS_DB`               | Redis database index                                                 |
+| `REDIS_EVENTS_STREAM`    | Stream for guild lifecycle events                                    |
+| `SHARD_SPLIT_COUNT`      | Shards to split into when Discord requests re-sharding (default `2`) |
+| `SENTRY_DSN`             | Sentry error reporting (optional)                                    |
+| `LOG_LEVEL`              | `debug`, `info`, `warn`, `error`                                     |
+| `LOG_JSON`               | `true` for JSON log output                                           |
