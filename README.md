@@ -14,7 +14,7 @@ Discord gateway service for PurgeBot. Maintains a persistent WebSocket connectio
 
 `@PurgeBot cancel` ends the guild's purge job, running or pending. Guild-only. Like `/cancel` and the cancel button, only the user who started the job may cancel it, and the bot replies only when a cancel fires.
 
-Any of these keywords works after the mention: cancel, stop, abort, halt, end, cancel purge, stop purge, stop purging, stop it, please stop
+Keywords: cancel, stop, abort, halt, end, cancel purge, stop purge, stop purging, stop it, please stop
 
 The privileged **Message Content** intent is not required, since Discord populates content for messages that mention the app and the trigger requires a leading mention.
 
