@@ -22,7 +22,7 @@ var stopWords = []string{
 }
 
 // onGuildMessageCreate is the fallback for when the status message's cancel button
-// is unreachable. Like the button, it is gated on job ownership and nothing else.
+// is unreachable. Like the button, it allows the requester or the guild owner.
 func (g *Gateway) onGuildMessageCreate(e *events.GuildMessageCreate) {
 	if e.Message.Author.Bot || e.Message.WebhookID != nil {
 		return
@@ -44,7 +44,7 @@ func (g *Gateway) onGuildMessageCreate(e *events.GuildMessageCreate) {
 		return
 	}
 	if active != nil {
-		if active.RequestedByID != authorID {
+		if !g.mayCancel(ctx, guildID, authorID, active.RequestedByID) {
 			return
 		}
 		if err := job.Cancel(ctx, g.redis, active.ID); err != nil {
@@ -60,7 +60,7 @@ func (g *Gateway) onGuildMessageCreate(e *events.GuildMessageCreate) {
 		g.logger.Error("get pending job for stop mention", zap.Error(err))
 		return
 	}
-	if pending == nil || pending.RequestedByID != authorID {
+	if pending == nil || !g.mayCancel(ctx, guildID, authorID, pending.RequestedByID) {
 		return
 	}
 	job.DeletePendingJob(ctx, g.redis, guildID)

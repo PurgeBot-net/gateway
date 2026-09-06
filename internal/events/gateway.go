@@ -40,7 +40,9 @@ func (g *Gateway) Start(ctx context.Context) error {
 			),
 		),
 		bot.WithEventListenerFunc(g.onReady),
+		bot.WithEventListenerFunc(g.onGuildReady),
 		bot.WithEventListenerFunc(g.onGuildJoin),
+		bot.WithEventListenerFunc(g.onGuildUpdate),
 		bot.WithEventListenerFunc(g.onGuildLeave),
 		bot.WithEventListenerFunc(g.onGuildMessageCreate),
 	)
@@ -79,6 +81,7 @@ func (g *Gateway) onGuildJoin(e *events.GuildJoin) {
 		"name":         e.Guild.Name,
 		"member_count": e.Guild.MemberCount,
 	})
+	g.storeGuildOwner(e.Guild.ID, e.Guild.OwnerID)
 	g.sendWelcomeDM(e)
 }
 
@@ -110,6 +113,7 @@ func (g *Gateway) onGuildLeave(e *events.GuildLeave) {
 		"type":     "guild_delete",
 		"guild_id": e.GuildID.String(),
 	})
+	g.deleteGuildOwner(e.GuildID)
 }
 
 func (g *Gateway) publishEvent(payload any) {
