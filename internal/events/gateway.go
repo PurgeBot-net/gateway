@@ -6,6 +6,7 @@ import (
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
+	"github.com/disgoorg/disgo/cache"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
@@ -31,7 +32,9 @@ func NewGateway(cfg gconfig.Config, logger *zap.Logger, db *database.Database, r
 }
 
 func (g *Gateway) Start(ctx context.Context) error {
+	// disgo's default; stated so it cannot silently change.
 	client, err := disgo.New(g.cfg.Token,
+		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagsNone)),
 		bot.WithShardManagerConfigOpts(
 			sharding.WithAutoScaling(true),
 			sharding.WithShardSplitCount(g.cfg.ShardSplitCount),
