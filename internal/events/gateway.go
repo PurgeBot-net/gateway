@@ -14,6 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
+	"github.com/PurgeBot-net/common/log"
 	"github.com/PurgeBot-net/database"
 	gconfig "github.com/PurgeBot-net/gateway/config"
 	"github.com/PurgeBot-net/locale"
@@ -35,6 +36,7 @@ func (g *Gateway) Start(ctx context.Context) error {
 	// disgo's default; stated so it cannot silently change.
 	client, err := disgo.New(g.cfg.Token,
 		bot.WithCacheConfigOpts(cache.WithCaches(cache.FlagsNone)),
+		bot.WithLogger(log.Slog(g.logger)),
 		bot.WithShardManagerConfigOpts(
 			sharding.WithAutoScaling(true),
 			sharding.WithShardSplitCount(g.cfg.ShardSplitCount),
