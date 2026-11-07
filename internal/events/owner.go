@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
 	"go.uber.org/zap"
 )
@@ -44,18 +45,20 @@ func (g *Gateway) deleteGuildOwner(guildID snowflake.ID) {
 	}
 }
 
-// Redis only, never REST: disgo dispatches listeners synchronously, so a blocking HTTP
-// call here would stall every shard.
 func (g *Gateway) guildOwnerID(ctx context.Context, guildID uint64) uint64 {
-	val, err := g.redis.Get(ctx, fmt.Sprintf(guildOwnerKey, guildID)).Result()
+	if val, err := g.redis.Get(ctx, fmt.Sprintf(guildOwnerKey, guildID)).Result(); err == nil {
+		if id, err := strconv.ParseUint(val, 10, 64); err == nil && id != 0 {
+			return id
+		}
+	}
+
+	guild, err := g.client.Rest.GetGuild(snowflake.ID(guildID), false, rest.WithCtx(ctx))
 	if err != nil {
+		g.logger.Warn("get guild owner", zap.Error(err), zap.String("guild_id", strconv.FormatUint(guildID, 10)))
 		return 0
 	}
-	id, err := strconv.ParseUint(val, 10, 64)
-	if err != nil {
-		return 0
-	}
-	return id
+	g.storeGuildOwner(guild.ID, guild.OwnerID)
+	return uint64(guild.OwnerID)
 }
 
 func (g *Gateway) mayCancel(ctx context.Context, guildID, actorID, requestedByID uint64) bool {

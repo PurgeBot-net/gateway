@@ -8,7 +8,7 @@ Discord gateway service for PurgeBot. Maintains a persistent WebSocket connectio
 - Logs bot ready state and guild count on startup
 - Handles `GuildJoin` and `GuildLeave` events, publishing each as `guild_create` / `guild_delete` onto `REDIS_EVENTS_STREAM`
 - Sends a localised welcome DM to the guild owner on `GuildJoin`
-- Caches each guild's owner in Redis from `GuildReady`, `GuildJoin` and `GuildUpdate`, so both services can authorise a cancel without a REST call
+- Caches each guild's owner in Redis from `GuildReady`, `GuildJoin` and `GuildUpdate`, so both services can usually authorise a cancel without a REST call; both fetch the guild once the entry expires
 - Handles `@PurgeBot cancel`, a chat fallback for `/cancel` and the cancel button
 
 ## Mention fallback

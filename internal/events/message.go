@@ -30,7 +30,10 @@ func (g *Gateway) onGuildMessageCreate(e *events.GuildMessageCreate) {
 	if !isStopMention(e.Message.Content, snowflake.ID(g.cfg.ApplicationID)) {
 		return
 	}
+	g.background("stop mention", func() { g.handleStopMention(e) })
+}
 
+func (g *Gateway) handleStopMention(e *events.GuildMessageCreate) {
 	// disgo listeners carry no context, and a cancel must still land during shutdown.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -10,6 +10,7 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/gateway"
+	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/sharding"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -87,14 +88,16 @@ func (g *Gateway) onGuildJoin(e *events.GuildJoin) {
 		"member_count": e.Guild.MemberCount,
 	})
 	g.storeGuildOwner(e.Guild.ID, e.Guild.OwnerID)
-	g.sendWelcomeDM(e)
+	g.background("welcome DM", func() { g.sendWelcomeDM(e) })
 }
 
 func (g *Gateway) sendWelcomeDM(e *events.GuildJoin) {
 	lang := string(e.Guild.PreferredLocale)
 	dm, err := g.client.Rest.CreateDMChannel(e.Guild.OwnerID)
 	if err != nil {
-		g.logger.Warn("create welcome DM channel", zap.Error(err))
+		if !dmRefused(err) {
+			g.logger.Warn("create welcome DM channel", zap.Error(err))
+		}
 		return
 	}
 	_, err = g.client.Rest.CreateMessage(dm.ID(), discord.MessageCreate{
@@ -105,9 +108,29 @@ func (g *Gateway) sendWelcomeDM(e *events.GuildJoin) {
 			),
 		},
 	})
-	if err != nil {
+	if err != nil && !dmRefused(err) {
 		g.logger.Warn("send welcome DM", zap.Error(err))
 	}
+}
+
+func dmRefused(err error) bool {
+	return rest.IsJSONErrorCode(err,
+		rest.JSONErrorCodeCannotSendMessagesToThisUser,
+		rest.JSONErrorCodeCannotSendMessagesToThisUserDueToHavingNoMutualGuilds,
+		rest.JSONErrorCodeInvalidRecipients,
+	)
+}
+
+// Off disgo's synchronous listener dispatch, recovering panics as disgo would.
+func (g *Gateway) background(name string, fn func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				g.logger.Error(name+" panicked", zap.Any("panic", r), zap.Stack("stack"))
+			}
+		}()
+		fn()
+	}()
 }
 
 func (g *Gateway) onGuildLeave(e *events.GuildLeave) {
