@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -77,6 +78,19 @@ func (g *Gateway) onReady(e *events.Ready) {
 }
 
 func (g *Gateway) onGuildJoin(e *events.GuildJoin) {
+	g.storeGuildOwner(e.Guild.ID, e.Guild.OwnerID)
+	// Existing guilds also land here after an outage or a skipped READY, and outage stubs have no joined_at.
+	if time.Since(e.Guild.JoinedAt) > recentJoinWindow {
+		g.logger.Debug("guild join with stale joined_at, not greeting",
+			zap.String("id", e.Guild.ID.String()),
+			zap.Time("joined_at", e.Guild.JoinedAt),
+		)
+		return
+	}
+	if !g.firstGreeting(e.Guild.ID, e.Guild.JoinedAt) {
+		g.logger.Debug("guild join already greeted, not greeting again", zap.String("id", e.Guild.ID.String()))
+		return
+	}
 	g.logger.Info("joined guild",
 		zap.String("id", e.Guild.ID.String()),
 		zap.String("name", e.Guild.Name),
@@ -87,7 +101,6 @@ func (g *Gateway) onGuildJoin(e *events.GuildJoin) {
 		"name":         e.Guild.Name,
 		"member_count": e.Guild.MemberCount,
 	})
-	g.storeGuildOwner(e.Guild.ID, e.Guild.OwnerID)
 	g.background("welcome DM", func() { g.sendWelcomeDM(e) })
 }
 

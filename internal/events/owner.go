@@ -15,9 +15,13 @@ import (
 const (
 	guildOwnerKey = "purgebot:guild_owner:%d"
 	guildOwnerTTL = 24 * time.Hour
+	// Per membership: a replayed join repeats joined_at, a re-invite after a missed GUILD_DELETE does not.
+	guildWelcomedKey = "purgebot:guild_welcomed:%d:%d"
+	recentJoinWindow = time.Hour
+	guildWelcomedTTL = 2 * recentJoinWindow
 )
 
-// Guilds present at connect arrive as GuildReady, only genuinely new ones as GuildJoin.
+// Guilds present at connect normally arrive as GuildReady, not GuildJoin.
 func (g *Gateway) onGuildReady(e *events.GuildReady) {
 	g.storeGuildOwner(e.Guild.ID, e.Guild.OwnerID)
 }
@@ -43,6 +47,19 @@ func (g *Gateway) deleteGuildOwner(guildID snowflake.ID) {
 	if err := g.redis.Del(ctx, fmt.Sprintf(guildOwnerKey, uint64(guildID))).Err(); err != nil {
 		g.logger.Warn("delete guild owner", zap.Error(err), zap.String("guild_id", guildID.String()))
 	}
+}
+
+// Fails open: a Redis error still greets.
+func (g *Gateway) firstGreeting(guildID snowflake.ID, joinedAt time.Time) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	first, err := g.redis.SetNX(ctx, fmt.Sprintf(guildWelcomedKey, uint64(guildID), joinedAt.Unix()), 1, guildWelcomedTTL).Result()
+	if err != nil {
+		g.logger.Warn("mark guild welcomed", zap.Error(err), zap.String("guild_id", guildID.String()))
+		return true
+	}
+	return first
 }
 
 func (g *Gateway) guildOwnerID(ctx context.Context, guildID uint64) uint64 {
