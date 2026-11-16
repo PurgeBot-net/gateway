@@ -6,7 +6,7 @@ Discord gateway service for PurgeBot. Maintains a persistent WebSocket connectio
 
 - Connects to the Discord gateway with the `Guilds` and `Guild Messages` intents
 - Logs bot ready state and guild count on startup
-- Handles `GuildJoin` and `GuildLeave` events, publishing each as `guild_create` / `guild_delete` onto `REDIS_EVENTS_STREAM`
+- Clears a guild's departure record on a genuine `GuildJoin`, so a short re-add between two sweeper runs still keeps its data
 - Sends a localised welcome DM to the guild owner on `GuildJoin`
 - Caches each guild's owner in Redis from `GuildReady`, `GuildJoin` and `GuildUpdate`, so both services can usually authorise a cancel without a REST call; both fetch the guild once the entry expires
 - Handles `@PurgeBot cancel`, a chat fallback for `/cancel` and the cancel button
@@ -31,7 +31,6 @@ All configuration is loaded from environment variables (see `.env.example` in th
 | `REDIS_ADDR`             | Redis address                                                        |
 | `REDIS_PASSWORD`         | Redis password                                                       |
 | `REDIS_DB`               | Redis database index                                                 |
-| `REDIS_EVENTS_STREAM`    | Stream for guild lifecycle events                                    |
 | `SHARD_SPLIT_COUNT`      | Shards to split into when Discord requests re-sharding (default `2`) |
 | `SENTRY_DSN`             | Sentry error reporting (optional)                                    |
 | `LOG_LEVEL`              | `debug`, `info`, `warn`, `error`                                     |

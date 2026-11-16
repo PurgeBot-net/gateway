@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/disgoorg/disgo"
@@ -13,6 +12,7 @@ import (
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/disgo/sharding"
+	"github.com/disgoorg/snowflake/v2"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 
@@ -87,6 +87,7 @@ func (g *Gateway) onGuildJoin(e *events.GuildJoin) {
 		)
 		return
 	}
+	g.background("clear departure", func() { g.clearDeparture(e.Guild.ID) })
 	if !g.firstGreeting(e.Guild.ID, e.Guild.JoinedAt) {
 		g.logger.Debug("guild join already greeted, not greeting again", zap.String("id", e.Guild.ID.String()))
 		return
@@ -95,12 +96,6 @@ func (g *Gateway) onGuildJoin(e *events.GuildJoin) {
 		zap.String("id", e.Guild.ID.String()),
 		zap.String("name", e.Guild.Name),
 	)
-	g.publishEvent(map[string]any{
-		"type":         "guild_create",
-		"guild_id":     e.Guild.ID.String(),
-		"name":         e.Guild.Name,
-		"member_count": e.Guild.MemberCount,
-	})
 	g.background("welcome DM", func() { g.sendWelcomeDM(e) })
 }
 
@@ -150,24 +145,15 @@ func (g *Gateway) onGuildLeave(e *events.GuildLeave) {
 	g.logger.Info("left guild",
 		zap.String("id", e.GuildID.String()),
 	)
-	g.publishEvent(map[string]any{
-		"type":     "guild_delete",
-		"guild_id": e.GuildID.String(),
-	})
 	g.deleteGuildOwner(e.GuildID)
 }
 
-func (g *Gateway) publishEvent(payload any) {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		g.logger.Error("marshal event", zap.Error(err))
-		return
-	}
-	err = g.redis.XAdd(context.Background(), &redis.XAddArgs{
-		Stream: g.cfg.RedisEventsStream,
-		Values: map[string]any{"data": data},
-	}).Err()
-	if err != nil {
-		g.logger.Warn("publish event", zap.Error(err))
+// A re-add and kick between two sweeps never shows in the sweeper's guild list, so a genuine join clears the departure.
+func (g *Gateway) clearDeparture(guildID snowflake.ID) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := g.db.ClearDepartures(ctx, []int64{int64(guildID)}); err != nil {
+		g.logger.Error("clear guild departure", zap.Error(err), zap.String("guild_id", guildID.String()))
 	}
 }

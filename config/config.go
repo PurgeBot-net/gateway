@@ -19,10 +19,9 @@ type Config struct {
 	DatabasePassword string `env:"DATABASE_PASSWORD"`
 
 	// Redis
-	RedisAddr         string `env:"REDIS_ADDR"          envDefault:"localhost:6379"`
-	RedisPassword     string `env:"REDIS_PASSWORD"`
-	RedisDB           int    `env:"REDIS_DB"            envDefault:"0"`
-	RedisEventsStream string `env:"REDIS_EVENTS_STREAM" envDefault:"purgebot-events"`
+	RedisAddr     string `env:"REDIS_ADDR"     envDefault:"localhost:6379"`
+	RedisPassword string `env:"REDIS_PASSWORD"`
+	RedisDB       int    `env:"REDIS_DB"       envDefault:"0"`
 
 	// Sharding
 	ShardSplitCount int `env:"SHARD_SPLIT_COUNT" envDefault:"2"`
