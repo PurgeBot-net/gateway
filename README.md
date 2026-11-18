@@ -32,6 +32,6 @@ All configuration is loaded from environment variables (see `.env.example` in th
 | `REDIS_PASSWORD`         | Redis password                                                       |
 | `REDIS_DB`               | Redis database index                                                 |
 | `SHARD_SPLIT_COUNT`      | Shards to split into when Discord requests re-sharding (default `2`) |
-| `SENTRY_DSN`             | Sentry error reporting (optional)                                    |
+| `SENTRY_DSN`             | Sentry-compatible error reporting (optional)                         |
 | `LOG_LEVEL`              | `debug`, `info`, `warn`, `error`                                     |
 | `LOG_JSON`               | `true` for JSON log output                                           |
