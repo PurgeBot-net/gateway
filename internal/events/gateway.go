@@ -52,6 +52,7 @@ func (g *Gateway) Start(ctx context.Context) error {
 		bot.WithEventListenerFunc(g.onGuildUpdate),
 		bot.WithEventListenerFunc(g.onGuildLeave),
 		bot.WithEventListenerFunc(g.onGuildMessageCreate),
+		bot.WithEventListenerFunc(g.onRoleDelete),
 	)
 	if err != nil {
 		return err
